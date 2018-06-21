@@ -8,6 +8,11 @@ import { Response, Hashtable, Types } from '../types';
  * @param description - Response description
  */
 export function Response(status: number, responseType: string = 'string', isArray: boolean = false, description: string = 'OK') {
+  if (isArray === false && responseType.indexOf('[]') === responseType.length - 2) {
+    isArray = true;
+    responseType = responseType.slice(0, responseType.length - 2);
+  }
+
   return (target: any, methodName: string) => {
     const nodeName = target.constructor.name;
     const storage = NodeStorage.getInstance();

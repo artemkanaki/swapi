@@ -24,12 +24,14 @@ describe('AIO test', () => {
   @BaseUrl(ownerBaseUrl)
   class Owner {
     @Get('/')
+    @Response(200, '#/Owner[]')
     public getOwners() {
       // ...
     }
 
     @Get('/:id')
-    @Param('id', 'number*')
+    @Param('id', 'number')
+    @Response(200, '#/Owner')
     public getOwnerById() {
       // ...
     }
@@ -65,7 +67,7 @@ describe('AIO test', () => {
     @Query('token', 'string')
     @Param('id', 'number')
     @Body({ name: 'string', owner: 'string' })
-    @Response(204, '#/Dog')
+    @Response(204)
     @Response(403, 'string', false, 'FORBIDDEN')
     public updateDog() {
       // ...
@@ -114,6 +116,13 @@ describe('AIO test', () => {
 
     // NOTICE: adds new response type in imperative style
     addResponseType('Dog', dogScheme);
+
+    const ownerScheme = {
+      name: 'string',
+      id: 'number',
+      dog: '#/Dog'
+    }
+    addResponseType('Owner', ownerScheme);
   });
 
   it('Owner\'s node should be ok', () => {

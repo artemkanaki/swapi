@@ -28,21 +28,23 @@ You may register custom type using `addResponseType` function. `addResponseType(
 Here is an example of usage:
 
 ```TS
-@BaseUrl('owners')
+@BaseUrl(ownerBaseUrl)
 class Owner {
   @Get('/')
+  @Response(200, '#/Owner', true) // or @Response(200, '#/Owner[]')
   public getOwners() {
     // ...
   }
 
   @Get('/:id')
-  @Param('id', 'number*')
+  @Param('id', 'number')
+  @Response(200, '#/Owner')
   public getOwnerById() {
     // ...
   }
 }
 
-@BaseUrl('Dogs', Owner)
+@BaseUrl(dogBaseUrl, Owner)
 class Dog {
   @Get('/')
   @Query('token', 'string')
@@ -72,7 +74,7 @@ class Dog {
   @Query('token', 'string')
   @Param('id', 'number')
   @Body({ name: 'string', owner: 'string' })
-  @Response(204, '#/Dog')
+  @Response(204)
   @Response(403, 'string', false, 'FORBIDDEN')
   public updateDog() {
     // ...
@@ -107,6 +109,14 @@ const dogScheme = {
 // NOTICE: adds new response type in imperative style
 addResponseType('Dog', dogScheme);
 
+
+const ownerScheme = {
+  name: 'string',
+  id: 'number',
+  dog: '#/Dog'
+}
+addResponseType('Owner', ownerScheme);
+
 // contains valid swagger in yaml format
 const swaggerYamlDeclaration = generateSwaggerYaml();
 ```
@@ -117,9 +127,9 @@ Result:
 ---
   swagger: "2.0"
   info:
-    version: "1.0.0"
+    version: "0.0.1"
     title: "swapi"
-    description: "decorators for auto-swagger"
+    description: ""
     license:
       name: "ISC"
     contact:
@@ -143,7 +153,9 @@ Result:
           200:
             description: "OK"
             schema:
-              type: "string"
+              type: "array"
+              items:
+                $ref: "#/definitions/Owner"
     /owner/${id}/:
       get:
         description: ""
@@ -154,7 +166,7 @@ Result:
           200:
             description: "OK"
             schema:
-              type: "string"
+              $ref: "#/definitions/Owner"
         parameters:
           -
             name: "id"
@@ -337,4 +349,13 @@ Result:
           type: "string"
         id:
           type: "number"
+    Owner:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        id:
+          type: "number"
+        dog:
+          $ref: "#/definitions/Dog"
 ```
