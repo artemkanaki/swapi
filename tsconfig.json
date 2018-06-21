@@ -1,19 +1,20 @@
 {
   "compilerOptions": {
-    "target": "es2017",
+    "target": "esnext",
     "module": "commonjs",
     "noImplicitAny": true,
     "removeComments": true,
-    "preserveConstEnums": true,
-    "outFile": "../../built/local/tsc.js",
     "sourceMap": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "paths": {
-      "json2yaml": [
-          "@types/json2yaml/index.d.ts"
-      ],
-    },
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "mapRoot": "./dist",
+    "declaration": true,
+    // "baseUrl": "./",
+    // "paths": {
+    //   "json2yaml": [
+    //       "@types/json2yaml/index.d.ts"
+    //   ],
+    // },
     "typeRoots": [
       "./node_modules/@types",
       "./@types"

@@ -7,17 +7,12 @@ import {
   Hashtable,
   ResponseType,
   BodyType,
+  ParameterLocation,
+  Types,
   // PackageJsonScheme, SwaggerFile, SwapiSettings, SwaggerFileMethod
 } from '../types';
 import { concat } from 'lodash';
 import { generateParamMeta } from '../helpers';
-import { Body } from '../decorators';
-
-enum ParameterLocation {
-  Query = 'query',
-  UrlParam = 'urlParam',
-  Body = 'body',
-}
 
 export class NodeStorage {
   private static instance: NodeStorage;
@@ -120,7 +115,7 @@ export class NodeStorage {
     if (endpoint.hasOwnProperty('urlParams')) {
       Object.entries(endpoint.urlParams).forEach(([, param ]) => {
         const storedParam =
-          this.findParameterByLocationAndName(nodeName, endpoint.name, ParameterLocation.UrlParam, param.name);
+          this.findParameterByLocationAndName(nodeName, endpoint.name, ParameterLocation.UrlPath, param.name);
         if (storedParam && storedParam.type !== 'string' && param.type === 'string') {
           return;
         }
@@ -165,7 +160,7 @@ export class NodeStorage {
   ): void {
     const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
-    if (location === ParameterLocation.UrlParam) {
+    if (location === ParameterLocation.UrlPath) {
       endpoint.urlParams.push(param);
     } else if (location === ParameterLocation.Query) {
       endpoint.query.push(param);
@@ -231,19 +226,19 @@ export class NodeStorage {
   public addUrlParam(nodeName: string, endpointName: string, param: Parameter): void {
     param.required = true;
 
-    this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlParam);
+    this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlPath);
   }
 
   public createUrlParam(nodeName: string, endpointName: string, name: string, type: string) {
     const required = true;
 
-    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.UrlParam);
+    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.UrlPath);
   }
 
   public upsertUrlParam(nodeName: string, endpointName: string, param: Parameter) {
     param.required = true;
 
-    this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlParam);
+    this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlPath);
   }
 
   public addBodyParam(nodeName: string, endpointName: string, param: Parameter): void {
@@ -298,7 +293,7 @@ export class NodeStorage {
     nodeName: string,
     endpointName: string,
     status: number,
-    responseType: string = 'string',
+    responseType: Types = Types.String,
     isArray: boolean = false,
     description: string = 'OK'
   ) {
@@ -329,14 +324,15 @@ export class NodeStorage {
     this._types.push(type);
   }
 
-  public createResponseType(name: string, typeScheme: Hashtable<string>) {
+  public createResponseType(name: string, typeScheme: Hashtable<string>, type: Types) {
     const scheme: Array<Parameter> = Object
       .entries(typeScheme)
       .reduce((params, [ field, type ]) => concat(params, generateParamMeta(field, type)), []);
 
     const responseType = {
       name,
-      scheme
+      scheme,
+      type
     } as ResponseType;
 
     this.addResponseType(responseType);
@@ -424,7 +420,7 @@ export class NodeStorage {
       param = endpoint.body.find((param) => param.name === name);
     } else if (location === ParameterLocation.Query) {
       param = endpoint.query.find((param) => param.name === name);
-    } else if (location === ParameterLocation.UrlParam) {
+    } else if (location === ParameterLocation.UrlPath) {
       param = endpoint.urlParams.find((param) => param.name === name);
     }
 
@@ -451,7 +447,7 @@ export class NodeStorage {
       endpoint.body.push(param);
     } else if (location === ParameterLocation.Query) {
       endpoint.query.push(param)
-    } else if (location === ParameterLocation.UrlParam) {
+    } else if (location === ParameterLocation.UrlPath) {
       endpoint.urlParams.push(param)
     }
 

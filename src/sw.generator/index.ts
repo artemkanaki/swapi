@@ -11,21 +11,21 @@ import {
   SwaggerJsonMethodResponse,
   Endpoint,
   SwaggerJsonMethodParameter,
-  Response
+  Response,
+  ResponseType
 } from '../types';
 import { resolve } from 'path';
 import { concat } from 'lodash';
 import { stringify } from 'json2yaml';
-import { normalizePath } from './normalize.path';
+import { normalizePath } from '../helpers/normalize.path';
 
 export function generateSwaggerJson() {
   const storageInstance = NodeStorage.getInstance();
-  const nodes = storageInstance.nodes;
 
   const packageJson = getPackageJson();
   const swaggerJson = generateSwaggerJsonBody(packageJson);
 
-  nodes.forEach((node) => {
+  storageInstance.nodes.forEach((node) => {
     const fullPath = storageInstance.getNodeFullPath(node.name);
 
     node.endpoints.forEach((endpoint) => {
@@ -41,6 +41,12 @@ export function generateSwaggerJson() {
         };
       }
     });
+  });
+
+  storageInstance.types.forEach((type) => {
+    const definitions = generateSwaggerJsonDefinitionType(type);
+
+    swaggerJson.definitions[type.name] = definitions;
   });
 
   return swaggerJson;
@@ -61,7 +67,7 @@ function getPackageJson(): PackageJsonScheme {
   return packageJson;
 }
 
-function generateSwaggerJsonBody(packageJson: PackageJsonScheme) {
+function generateSwaggerJsonBody(packageJson: PackageJsonScheme): SwaggerJson {
   return {
     swagger: '2.0',
     info: {
@@ -80,7 +86,8 @@ function generateSwaggerJsonBody(packageJson: PackageJsonScheme) {
     schemes: packageJson.swapi.schemes,
     produces: packageJson.swapi.produces,
     consumes: packageJson.swapi.consumes,
-    paths: {}
+    paths: {},
+    definitions: {}
   } as SwaggerJson
 }
 
@@ -209,6 +216,34 @@ function getDefaultResponseWithStatus(method: HttpMethods): { [status: string]: 
       schema: { type: 'string' }
     } as SwaggerJsonMethodResponse
   };
+}
+
+function generateSwaggerJsonDefinitionType(res: ResponseType): SwaggerJsonSchema {
+  const definition: SwaggerJsonSchema = {
+    type: res.type
+  };
+
+  const properties = res.scheme.reduce((props: any, prop) => {
+    if (isReference(prop.type)) {
+      props[prop.name] = {
+        $ref: createSwaggerReference(prop.type)
+      };
+    } else {
+      props[prop.name] = {
+        type: prop.type
+      };
+    }
+
+    return props;
+  }, {});
+
+  if (res.type === Types.Array) {
+    definition.items = { properties };
+  } else {
+    definition.properties = properties;
+  }
+
+  return definition;
 }
 
 //#endregion

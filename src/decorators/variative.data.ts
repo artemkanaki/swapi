@@ -1,12 +1,6 @@
 import { generateParamMeta } from '../helpers';
 import { NodeStorage } from '../storage';
-import { BodyType } from '../types';
-
-enum ParamLocation {
-  Body = 'body',
-  UrlPath = 'urlPath',
-  Query = 'query'
-}
+import { BodyType, ParameterLocation } from '../types';
 
 export function BodyIsArray(target: any, methodName: string) {
   setBodyType(target, methodName, BodyType.Array);
@@ -32,20 +26,20 @@ function setBodyType(target: any, methodName: string, type: BodyType) {
 }
 
 export function Param(name: string, type: string, required?: boolean) {
-  return VariativeDataDecorator(name, ParamLocation.UrlPath, type, required);
+  return VariativeDataDecorator(name, ParameterLocation.UrlPath, type, required);
 }
 
 export function Query(name: string, type: string, required?: boolean) {
-  return VariativeDataDecorator(name, ParamLocation.Query, type, required);
+  return VariativeDataDecorator(name, ParameterLocation.Query, type, required);
 }
 
 export function Body(name: string | Object, type?: string, required?: boolean) {
-  return VariativeDataDecorator(name, ParamLocation.Body, type, required);
+  return VariativeDataDecorator(name, ParameterLocation.Body, type, required);
 }
 
 function VariativeDataDecorator(
   name: string | Object,
-  location: ParamLocation,
+  location: ParameterLocation,
   type?: string,
   required?: boolean
 ) {
@@ -54,11 +48,11 @@ function VariativeDataDecorator(
     const storageInstance = NodeStorage.getInstance();
 
     let addParam: Function;
-    if (location === ParamLocation.Body) {
+    if (location === ParameterLocation.Body) {
       addParam = storageInstance.upsertBodyParam;
-    } else if (location === ParamLocation.Query) {
+    } else if (location === ParameterLocation.Query) {
       addParam = storageInstance.upsertQueryParam;
-    } else if (location === ParamLocation.UrlPath) {
+    } else if (location === ParameterLocation.UrlPath) {
       addParam = storageInstance.upsertUrlParam;
     }
 

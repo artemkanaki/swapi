@@ -1,5 +1,5 @@
 import { NodeStorage } from '../storage';
-import { Response, Hashtable } from '../types';
+import { Response, Hashtable, Types } from '../types';
 
 /**
  * Adds response to endpoint
@@ -22,9 +22,11 @@ export function Response(status: number, responseType: string = 'string', isArra
   }
 }
 
-export function addResponseType(name: string, scheme: Hashtable<string>) {
+export function addResponseType(name: string, scheme: Hashtable<string>, isArray: boolean = false) {
+  const type = isArray ? Types.Array : Types.Object;
+
   const storage = NodeStorage.getInstance();
-  storage.createResponseType(`#/${name}`, scheme);
+  storage.createResponseType(name, scheme, type);
 
   return;
 }

@@ -61,12 +61,13 @@ export interface Parameter {
 export interface Response {
   status: number;
   description: string;
-  responseType: string;
+  responseType: Types;
   isArray?: boolean;
 }
 
 export interface ResponseType {
   name: string;
+  type: Types;
   scheme: Array<Parameter>;
 }
 
@@ -105,6 +106,9 @@ export interface SwaggerJson {
           [ method: string ]: SwaggerJsonMethod
       }
   };
+  definitions: {
+    [name: string]: SwaggerJsonSchema;
+  }
 }
 
 export interface SwaggerJsonInfo {
@@ -149,15 +153,16 @@ export interface SwaggerJsonMethodResponse {
 }
 
 export interface SwaggerJsonSchema {
-  type: string;
+  type?: Types;
   $ref?: string;
-  properties?: any;
-  items?: SwaggerJsonSchemaArrayItem;
+  properties?: { [ name: string ]: SwaggerJsonSchema };
+  items?: SwaggerJsonSchema;
 }
 
 export interface SwaggerJsonSchemaArrayItem {
   type?: string;
   $ref?: string;
 }
+
 //#endregion
 

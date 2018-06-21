@@ -13,7 +13,7 @@ import {
 } from '../src/decorators';
 import { NodeStorage } from '../src/storage';
 import { Node, Response as ResponseType, Parameter } from '../src/types';
-import { generateSwaggerJson, generateSwaggerYaml } from '../src/helpers';
+import { generateSwaggerJson, generateSwaggerYaml } from '../src/sw.generator';
 import { sortBy } from 'lodash';
 
 describe('AIO test', () => {
