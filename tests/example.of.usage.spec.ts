@@ -65,7 +65,7 @@ describe('AIO test', () => {
     @Query('token', 'string')
     @Param('id', 'number')
     @Body({ name: 'string', owner: 'string' })
-    @Response(204)
+    @Response(204, '#/Dog')
     @Response(403, 'string', false, 'FORBIDDEN')
     public updateDog() {
       return;
@@ -212,8 +212,8 @@ describe('AIO test', () => {
   it('response type `Dog` should be ok', () => {
     const storage = NodeStorage.getInstance();
 
-    const dogType = storage.findResponseType('#/Dog');
-    expect(dogType.name).toEqual('#/Dog');
+    const dogType = storage.findResponseType('Dog');
+    expect(dogType.name).toEqual('Dog');
     expect(sortBy(dogType.scheme, ['name'])).toEqual(sortBy([
       {
         name: 'name',
@@ -236,6 +236,7 @@ describe('AIO test', () => {
   it('should create sw json', () => {
     const swJson = generateSwaggerJson();
 
+    // FIXME: whole structure should be checked
     expect(swJson).toBeTruthy();
   });
 
