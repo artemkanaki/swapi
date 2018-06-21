@@ -39,6 +39,7 @@ describe('AIO test', () => {
   class Dog {
     @Get('/')
     @Query('token', 'string')
+    @Response(200, '#/Dog', true)
     public getDogs() {
       return;
     }
@@ -46,6 +47,7 @@ describe('AIO test', () => {
     @Get('/:id/')
     @Param('id', 'number', true)
     @Query('token', 'string')
+    @Response(200, '#/Dog')
     public getDogById() {
       return;
     }
@@ -54,6 +56,7 @@ describe('AIO test', () => {
     @Query('token', 'string')
     @Param('id', 'number')
     @Body({ name: 'string', owner: 'string' })
+    @Response(201, '#/Dog')
     public createDog() {
       return;
     }
@@ -62,7 +65,7 @@ describe('AIO test', () => {
     @Query('token', 'string')
     @Param('id', 'number')
     @Body({ name: 'string', owner: 'string' })
-    @Response(204, '#/Dog')
+    @Response(204)
     @Response(403, 'string', false, 'FORBIDDEN')
     public updateDog() {
       return;
@@ -72,6 +75,8 @@ describe('AIO test', () => {
     @Query('token', 'string')
     @Param('id', 'number')
     @Body('owner', 'string')
+    @Response(204)
+    @Response(403, 'string', false, 'FORBIDDEN')
     public updateDogOwner() {
       return;
     }
@@ -79,6 +84,8 @@ describe('AIO test', () => {
     @Delete('/:id/')
     @Query('token', 'string')
     @Param('id', 'number')
+    @Response(204)
+    @Response(403, 'string', false, 'FORBIDDEN')
     public deleteDog() {
       return;
     }
