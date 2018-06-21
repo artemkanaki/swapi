@@ -2,7 +2,7 @@
 
 ## Motivation
 
-If you sometime white swagger file by yourself, then you should know how painful it is, and how easy to forgot add new endpoints. Here is the tool which creates swagger files based on classes metadata.
+If you sometime wrote swagger file by yourself, then you should know how painful it is, and how easy forgot to add new endpoints. Here is the tool which creates swagger files based on classes' metadata.
 
 ## Explanation
 
@@ -10,16 +10,16 @@ If you sometime white swagger file by yourself, then you should know how painful
 
 Whole functionality is based on TypeScript Decorators. Here is an explanation of decorators in this repo:
 
-- `@BaseUrl(url: string, relatedTo: { new(): A })` - declares a path which will be used as a prefix for endpoints. url may be wrote wrapped in slashes, or not, it does not matter. Also there is second parameter (as in example `@BaseUrl('Dogs', Owner)`). This means that dogs endpoints will have extra owner prefix -> will be nested. Notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type;
+- `@BaseUrl(url: string, relatedTo: { new(): A })` - declares a path which will be used as a prefix for endpoints. url may be wrote wrapped in slashes, or not, it does not matter. Also there is second parameter (as in example `@BaseUrl('Dogs', Owner)`). This means that dogs endpoints will have extra owner prefix, so it will be nested. Notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type;
 - `@Get(url: string, description?: string)` - declares new `GET` endpoint.
 - `@Post(url: string, description?: string)` - declares new `POST` endpoint.
 - `@Put(url: string, description?: string)` - declares new `PUT` endpoint.
 - `@Patch(url: string, description?: string)` - declares new `PATCH` endpoint.
 - `@Delete(url: string, description?: string)` - declares new `DELETE` endpoint.
-- `@Param(name: string, type?: string = 'string')` - declares url parameter. For example if you want change type of `id` param in this url `owners/:id`, then you should write `@Param('id', 'number')`, or `@Param({ id: 'number' })` if you want declare one or more param.
-- `@Query(name: string, type?: string = 'string', required: boolean = false)` - declares query parameter. may have third param, which marks param as required. Also param may be marked as required if last symbol of type will be `*`. So `@Query('token', 'string', true)` will be equal `@Query('token', 'string*')`. It's useful when you declare more than one query param, such as `@Query({ token: 'string*', q: 'string' })`
-- `@Body(name: string, type?: string = 'string', required: boolean = false)` - declares query parameter. Has all features as `@Query` decorator.
-- `@Response(status: number, type?: string = 'string', isArray?: boolean = false, description?: string = '')` - declares endpoint's response. May be used few times if you want declare few responses. type parameter may take simple types, such as `string` or `number`, or custom types. If you want declare custom type, then you should register your type using `addResponseType` function, and then pass the name of custom type in format `'#/' + typeName`, where `typeName` is the name of type.
+- `@Param(name: string, type?: string = 'string')` - declares url's parameter. For example if you want change type of `id` param in this url `owners/:id`, then you should write `@Param('id', 'number')`, or `@Param({ id: 'number' })` if you want declare one or more param.
+- `@Query(name: string, type?: string = 'string', required: boolean = false)` - declares query's parameter. may have third param, which marks param as required. Also param may be marked as required if last symbol of type will be `*`. So `@Query('token', 'string', true)` will be equal `@Query('token', 'string*')`. It's useful when you declare more than one query param, such as `@Query({ token: 'string*', q: 'string' })`
+- `@Body(name: string, type?: string = 'string', required: boolean = false)` - declares body parameter. Has all features as `@Query` decorator.
+- `@Response(status: number, type?: string = 'string', isArray?: boolean = false, description?: string = '')` - declares endpoint's response. May be used few times if you want declare few responses. `type` parameter may take simple types, such as `string` or `number`, or custom types. If you want declare custom type, then you should register your type using `addResponseType` function, and then pass the name of custom type in format `'#/' + typeName`, where `typeName` is the name of type.
 
 ### Custom types
 
