@@ -8,7 +8,16 @@
     "outFile": "../../built/local/tsc.js",
     "sourceMap": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "json2yaml": [
+          "@types/json2yaml/index.d.ts"
+      ],
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./@types"
+    ]
   },
   "include": [
     "src/**/*"

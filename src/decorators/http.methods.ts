@@ -1,6 +1,7 @@
-import { Parameters, Endpoint, HttpMethods } from '../types';
+import { Endpoint, HttpMethods } from '../types';
 import { pullOutParamsFromUrl } from '../helpers';
 import { NodeStorage } from '../storage';
+import { normalizePath } from '../helpers/normalize.path';
 
 export function Get(path: string, description: string = '') {
   return BasicHttpMethodDecorator(path, HttpMethods.GET, description);
@@ -27,12 +28,15 @@ function BasicHttpMethodDecorator(
   method: HttpMethods,
   description: string = ''
 ) {
-  const urlParams: Parameters = pullOutParamsFromUrl(path);
+  path = normalizePath(path);
+
+  const urlParams = pullOutParamsFromUrl(path);
 
   return (target: any, propertyName: string, descriptor: PropertyDescriptor) => {
     const nodeName = target.constructor.name;
 
     const endpoint = {
+      // FIXME: it should be generated as toCamelCase(nodeName + propertyName);
       name: propertyName,
       path,
       method,

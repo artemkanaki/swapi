@@ -7,7 +7,7 @@ import { Response, Hashtable } from '../types';
  * @param responseType - may be a basic type (such as `string`, `number` etc), or complex. complex type should be written as '#/ComplexTypeName'
  * @param description - Response description
  */
-export function Response(status: number, responseType: string = 'string', description: string = 'OK') {
+export function Response(status: number, responseType: string = 'string', isArray: boolean = false, description: string = 'OK') {
   return (target: any, methodName: string) => {
     const nodeName = target.constructor.name;
     const storage = NodeStorage.getInstance();
@@ -15,6 +15,7 @@ export function Response(status: number, responseType: string = 'string', descri
     const response = {
       status,
       responseType,
+      isArray,
       description
     } as Response;
     storage.upsertResponse(nodeName, methodName, response.status, response);

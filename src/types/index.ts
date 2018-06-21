@@ -12,6 +12,20 @@ export enum ParameterLocation {
   Query = 'query'
 }
 
+export enum BodyType {
+  Object = 'object',
+  Array = 'array',
+  String = 'string',
+  Number = 'number'
+}
+
+export enum Types {
+  Object = 'object',
+  Array = 'array',
+  String = 'string',
+  Number = 'number'
+}
+
 export interface Node {
   endpoints: Array<Endpoint>;
   relatedTo: string;
@@ -25,31 +39,35 @@ export interface Endpoint {
   path: string;
   method: HttpMethods,
   description?: string,
-  urlParams: Parameters;
-  body: Parameters;
-  query: Parameters;
+  urlParams: Array<Parameter>;
+  body: Array<Parameter>;
+  bodyType: BodyType;
+  query: Array<Parameter>;
   responses: Array<Response>;
 }
 
-export interface Parameters {
-  [ key: string ]: Parameter
-}
+// export interface Parameters {
+//   [ key: string ]: Parameter
+// }
 
 export interface Parameter {
   name: string;
   type: string;
   required?: boolean;
+  // TODO: fill it
+  description?: string;
 }
 
 export interface Response {
   status: number;
   description: string;
   responseType: string;
+  isArray?: boolean;
 }
 
 export interface ResponseType {
   name: string;
-  scheme: Parameters;
+  scheme: Array<Parameter>;
 }
 
 export interface Hashtable<T> {
@@ -74,9 +92,9 @@ export interface SwapiSettings {
 }
 
 //#region SW types
-export interface SwaggerFile {
+export interface SwaggerJson {
   swagger: string;
-  info?: SwaggerFileInfo;
+  info?: SwaggerJsonInfo;
   host: string;
   basePath: string;
   schemes: Array<string>;
@@ -84,59 +102,60 @@ export interface SwaggerFile {
   produces: Array<string>;
   paths: {
       [ path: string ]: {
-          [ method: string ]: SwaggerFileMethod
+          [ method: string ]: SwaggerJsonMethod
       }
   };
 }
 
-export interface SwaggerFileInfo {
+export interface SwaggerJsonInfo {
   version?: string;
   title?: string;
   description?: string;
   termsOfService?: string;
-  contact: SwaggerFileContact;
-  license: SwaggerFileLicense;
+  contact: SwaggerJsonContact;
+  license: SwaggerJsonLicense;
 }
 
-export interface SwaggerFileContact {
+export interface SwaggerJsonContact {
   name: string;
 }
 
-export interface SwaggerFileLicense {
+export interface SwaggerJsonLicense {
   name: string;
 }
 
-export interface SwaggerFileMethod {
+export interface SwaggerJsonMethod {
   description?: string;
   operationId?: string;
   produces?: Array<string>;
-  parameters: Array<SwaggerFileMethodParameter>;
-  responses: { [ status: string ]: SwaggerFileMethodResponse };
+  parameters: Array<SwaggerJsonMethodParameter>;
+  responses: { [ status: string ]: SwaggerJsonMethodResponse };
 }
 
-export interface SwaggerFileMethodParameter {
+export interface SwaggerJsonMethodParameter {
   name: string;
   in: ParameterLocation;
   description?: string;
   required?: boolean;
   type: string;
-  items?: SwaggerFileSchemaArrayItem;
+  items?: SwaggerJsonSchemaArrayItem;
   collectionFormat?: string;
-  schema: SwaggerFileSchema;
+  schema?: SwaggerJsonSchema;
 }
 
-export interface SwaggerFileMethodResponse {
+export interface SwaggerJsonMethodResponse {
   description?: string;
-  schema: SwaggerFileSchema;
+  schema: SwaggerJsonSchema;
 }
 
-export interface SwaggerFileSchema {
+export interface SwaggerJsonSchema {
   type: string;
+  $ref?: string;
   properties?: any;
-  items?: SwaggerFileSchemaArrayItem;
+  items?: SwaggerJsonSchemaArrayItem;
 }
 
-export interface SwaggerFileSchemaArrayItem {
+export interface SwaggerJsonSchemaArrayItem {
   type?: string;
   $ref?: string;
 }

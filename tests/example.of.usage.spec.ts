@@ -12,12 +12,15 @@ import {
   addResponseType
 } from '../src/decorators';
 import { NodeStorage } from '../src/storage';
-import { Node, Parameters, Response as ResponseType } from '../src/types';
+import { Node, Response as ResponseType, Parameter } from '../src/types';
+import { generateSwaggerJson, generateSwaggerYaml } from '../src/helpers';
+import { sortBy } from 'lodash';
 
-describe('base url', () => {
+describe('AIO test', () => {
   const ownerBaseUrl = 'owner';
   const dogBaseUrl = 'dog';
 
+  //#region Valid example of usage
   @BaseUrl(ownerBaseUrl)
   class Owner {
     @Get('/')
@@ -26,7 +29,7 @@ describe('base url', () => {
     }
 
     @Get('/:id')
-    @Param('id', 'number')
+    @Param('id', 'number*')
     public getOwnerById() {
 
     }
@@ -60,7 +63,7 @@ describe('base url', () => {
     @Param('id', 'number')
     @Body({ name: 'string', owner: 'string' })
     @Response(204, '#/Dog')
-    @Response(403, 'string', 'FORBIDDEN')
+    @Response(403, 'string', false, 'FORBIDDEN')
     public updateDog() {
       return;
     }
@@ -80,12 +83,12 @@ describe('base url', () => {
       return;
     }
   }
+  //#endregion
 
-  function checkParams(params: Parameters) {
-    Object.entries(params)
-      .forEach(([key, meta]) => {
-        expect(key).toEqual(meta.name)
-        expect(typeof meta.type).toEqual('string')
+  function checkParams(params: Array<Parameter>) {
+    params.forEach(({ type, name }) => {
+        expect(typeof type).toEqual('string');
+        expect(typeof name).toEqual('string');
       });
   }
 
@@ -102,6 +105,7 @@ describe('base url', () => {
       id: 'number'
     }
 
+    // NOTICE: adds new response type in imperative style
     addResponseType('Dog', dogScheme);
   });
 
@@ -160,28 +164,32 @@ describe('base url', () => {
     expect(updateDogEndpoint.name).toEqual(new Dog().updateDog.name);
     expect(updateDogEndpoint.path).toEqual(':id');
 
-    expect(updateDogEndpoint.body).toEqual({
-      name: {
+    expect(updateDogEndpoint.body).toEqual([
+      {
         name: 'name',
+        required: false,
         type: 'string'
       },
-      owner: {
+      {
         name: 'owner',
+        required: false,
         type: 'string'
       }
-    });
-    expect(updateDogEndpoint.query).toEqual({
-      token: {
+    ]);
+    expect(updateDogEndpoint.query).toEqual([
+      {
         name: 'token',
+        required: false,
         type: 'string'
       }
-    });
-    expect(updateDogEndpoint.urlParams).toEqual({
-      id: {
+    ]);
+    expect(updateDogEndpoint.urlParams).toEqual([
+      {
         name: 'id',
+        required: true,
         type: 'number'
       }
-    });
+    ]);
 
     const [ forbiddenResponse, okResponse ] = updateDogEndpoint.responses;
 
@@ -194,24 +202,39 @@ describe('base url', () => {
     expect(forbiddenResponse.responseType).toEqual('string');
   })
 
-  it('Dog\'s node should be ok', () => {
+  it('response type `Dog` should be ok', () => {
     const storage = NodeStorage.getInstance();
 
     const dogType = storage.findResponseType('#/Dog');
     expect(dogType.name).toEqual('#/Dog');
-    expect(dogType.scheme).toEqual({
-      name: {
+    expect(sortBy(dogType.scheme, ['name'])).toEqual(sortBy([
+      {
         name: 'name',
+        required: false,
         type: 'string'
       },
-      id: {
+      {
         name: 'id',
+        required: false,
         type: 'number'
       },
-      owner: {
+      {
         name: 'owner',
+        required: false,
         type: 'string'
       }
-    });
+    ], ['name']));
+  });
+
+  it('should create sw json', () => {
+    const swJson = generateSwaggerJson();
+
+    expect(swJson).toBeTruthy();
+  });
+
+  it('should create sw yaml', () => {
+    const swYaml = generateSwaggerYaml();
+
+    expect(typeof swYaml).toEqual('string');
   });
 });

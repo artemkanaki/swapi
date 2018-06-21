@@ -1,7 +1,17 @@
-import { Node, Endpoint, HttpMethods, Parameter, Response, Parameters, Hashtable, ResponseType, PackageJsonScheme, SwaggerFile, SwapiSettings, SwaggerFileMethod } from '../types';
-import { pick, get, set } from 'lodash';
+import {
+  Node,
+  Endpoint,
+  HttpMethods,
+  Parameter,
+  Response,
+  Hashtable,
+  ResponseType,
+  BodyType,
+  // PackageJsonScheme, SwaggerFile, SwapiSettings, SwaggerFileMethod
+} from '../types';
+import { concat } from 'lodash';
 import { generateParamMeta } from '../helpers';
-import { dirname, resolve } from 'path';
+import { Body } from '../decorators';
 
 enum ParameterLocation {
   Query = 'query',
@@ -12,8 +22,16 @@ enum ParameterLocation {
 export class NodeStorage {
   private static instance: NodeStorage;
 
-  private nodes: Array<Node> = [];
-  private types: Array<ResponseType> = [];
+  private _nodes: Array<Node> = [];
+  private _types: Array<ResponseType> = [];
+
+  public get nodes() {
+    return this._nodes;
+  }
+
+  public get types() {
+    return this._types;
+  }
 
   public static getInstance(): NodeStorage {
     NodeStorage.instance = NodeStorage.instance || new NodeStorage();
@@ -32,7 +50,7 @@ export class NodeStorage {
       }
     }
 
-    this.nodes.push(node);
+    this._nodes.push(node);
   }
 
   public createNode(name: string, path: string, relatedTo: string = null, endpoints: Array<Endpoint> = []): Node {
@@ -79,10 +97,11 @@ export class NodeStorage {
       path,
       method,
       description,
-      body: {},
-      urlParams: {},
-      query: {},
-      responses: []
+      body: [],
+      urlParams: [],
+      query: [],
+      responses: [],
+      bodyType: null
     };
 
     this.addEndpoint(nodeName, endpoint);
@@ -100,32 +119,35 @@ export class NodeStorage {
 
     if (endpoint.hasOwnProperty('urlParams')) {
       Object.entries(endpoint.urlParams).forEach(([, param ]) => {
-        const storedType = get(storedEndpoint, `urlParams.${ param.name }.type`, null);
-        if (storedType && storedType !== 'string' && param.type === 'string') {
+        const storedParam =
+          this.findParameterByLocationAndName(nodeName, endpoint.name, ParameterLocation.UrlParam, param.name);
+        if (storedParam && storedParam.type !== 'string' && param.type === 'string') {
           return;
         }
 
-        this.createUrlParam(nodeName, endpointName, param.name, param.type, param.required);
+        this.upsertUrlParam(nodeName, endpointName, param);
       });
     }
     if (endpoint.hasOwnProperty('query')) {
       Object.entries(endpoint.query).forEach(([, param ]) => {
-        const storedType = get(storedEndpoint, `query.${ param.name }.type`, null);
-        if (storedType && storedType !== 'string' && param.type === 'string') {
+        const storedParam =
+          this.findParameterByLocationAndName(nodeName, endpoint.name, ParameterLocation.Query, param.name);
+        if (storedParam && storedParam.type !== 'string' && param.type === 'string') {
           return;
         }
 
-        this.createQueryParam(nodeName, endpointName, param.name, param.type, param.required);
+        this.upsertQueryParam(nodeName, endpointName, param);
       });
     }
     if (endpoint.hasOwnProperty('body')) {
       Object.entries(endpoint.body).forEach(([, param ]) => {
-        const storedType = get(storedEndpoint, `body.${ param.name }.type`, null);
-        if (storedType && storedType !== 'string' && param.type === 'string') {
+        const storedParam =
+          this.findParameterByLocationAndName(nodeName, endpoint.name, ParameterLocation.Body, param.name);
+        if (storedParam && storedParam.type !== 'string' && param.type === 'string') {
           return;
         }
 
-        this.createBodyParam(nodeName, endpointName, param.name, param.type, param.required);
+        this.upsertBodyParam(nodeName, endpointName, param);
       });
     }
     if (endpoint.hasOwnProperty('response')) {
@@ -144,11 +166,11 @@ export class NodeStorage {
     const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
     if (location === ParameterLocation.UrlParam) {
-      endpoint.urlParams[ param.name ] = param;
+      endpoint.urlParams.push(param);
     } else if (location === ParameterLocation.Query) {
-      endpoint.query[ param.name ] = param;
+      endpoint.query.push(param);
     } else if (location === ParameterLocation.Body) {
-      endpoint.body[ param.name ] = param;
+      endpoint.body.push(param);
     }
   }
 
@@ -171,28 +193,99 @@ export class NodeStorage {
     return param;
   }
 
+  public upsertEndpointParam(
+    nodeName: string,
+    endpointName: string,
+    param: Parameter,
+    location: ParameterLocation,
+  ) {
+    const storedParam = this.findOrCreateParameterByLocationAndName(nodeName, endpointName, location, param.name);
+
+    storedParam.name = param.name ? param.name : storedParam.name;
+    storedParam.type = param.type ? param.type : storedParam.type;
+    storedParam.required = typeof param.required === 'boolean' ? param.required : storedParam.required;
+  }
+
   public addQueryParam(nodeName: string, endpointName: string, param: Parameter): void {
+    param.required = typeof param.required === 'boolean' ? param.required : false;
+
     this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.Query);
   }
 
-  public createQueryParam(nodeName: string, endpointName: string, name: string, type: string, required: boolean) {
-    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.Query)
+  public createQueryParam(
+    nodeName: string,
+    endpointName: string,
+    name: string,
+    type: string,
+    required: boolean = false
+  ) {
+    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.Query);
+  }
+
+  public upsertQueryParam(nodeName: string, endpointName: string, param: Parameter) {
+    param.required = typeof param.required === 'boolean' ? param.required : false;
+
+    this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.Query);
   }
 
   public addUrlParam(nodeName: string, endpointName: string, param: Parameter): void {
+    param.required = true;
+
     this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlParam);
   }
 
-  public createUrlParam(nodeName: string, endpointName: string, name: string, type: string, required: boolean) {
-    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.UrlParam)
+  public createUrlParam(nodeName: string, endpointName: string, name: string, type: string) {
+    const required = true;
+
+    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.UrlParam);
+  }
+
+  public upsertUrlParam(nodeName: string, endpointName: string, param: Parameter) {
+    param.required = true;
+
+    this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlParam);
   }
 
   public addBodyParam(nodeName: string, endpointName: string, param: Parameter): void {
+    param.required = typeof param.required === 'boolean' ? param.required : false;
+
     this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.Body);
+
+    this.setBodyTypeIfEmpty(nodeName, endpointName, BodyType.Object);
   }
 
-  public createBodyParam(nodeName: string, endpointName: string, name: string, type: string, required: boolean) {
-    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.Body)
+  public createBodyParam(
+    nodeName: string,
+    endpointName: string,
+    name: string,
+    type: string,
+    required: boolean = false
+  ) {
+    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.Body);
+
+    this.setBodyTypeIfEmpty(nodeName, endpointName, BodyType.Object);
+  }
+
+  public upsertBodyParam(nodeName: string, endpointName: string, param: Parameter) {
+    param.required = typeof param.required === 'boolean' ? param.required : false;
+
+    this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.Body);
+
+    this.setBodyTypeIfEmpty(nodeName, endpointName, BodyType.Object);
+  }
+
+  public setBodyType(nodeName: string, endpointName: string, type: BodyType) {
+    const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
+
+    endpoint.bodyType = type;
+  }
+
+  public setBodyTypeIfEmpty(nodeName: string, endpointName: string, type: BodyType) {
+    const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
+
+    if (!endpoint.bodyType) {
+      this.setBodyType(nodeName, endpointName, type);
+    }
   }
 
   public addResponse(nodeName: string, endpointName: string, response: Response) {
@@ -206,11 +299,13 @@ export class NodeStorage {
     endpointName: string,
     status: number,
     responseType: string = 'string',
+    isArray: boolean = false,
     description: string = 'OK'
   ) {
     const response: Response = {
       status,
       responseType,
+      isArray,
       description
     };
 
@@ -225,18 +320,19 @@ export class NodeStorage {
     storedResponse.status = response.status ? response.status : storedResponse.status;
     storedResponse.description = response.description ? response.description : storedResponse.description;
     storedResponse.responseType = response.responseType ? response.responseType : storedResponse.responseType;
+    storedResponse.isArray = response.isArray ? response.isArray : storedResponse.isArray;
 
     return;
   }
 
   public addResponseType(type: ResponseType) {
-    this.types.push(type);
+    this._types.push(type);
   }
 
   public createResponseType(name: string, typeScheme: Hashtable<string>) {
-    const scheme: Parameters = Object
+    const scheme: Array<Parameter> = Object
       .entries(typeScheme)
-      .reduce((scheme, [ field, type ]) => set(scheme, field, generateParamMeta(field, type)), {});
+      .reduce((params, [ field, type ]) => concat(params, generateParamMeta(field, type)), []);
 
     const responseType = {
       name,
@@ -249,7 +345,7 @@ export class NodeStorage {
   }
 
   public findNodeByName(name: string): Node {
-    return this.nodes.find((node) => node.name === name) || null;
+    return this._nodes.find((node) => node.name === name) || null;
   }
 
   public findOrCreateNodeByName(name: string): Node {
@@ -292,7 +388,7 @@ export class NodeStorage {
       return null;
     }
 
-    return endpoint.responses.find((response) => response.status === status) || null
+    return endpoint.responses.find((response) => response.status === status) || null;
   }
 
   public findOrCreateResponseByStatus(nodeName: string, endpointName: string, status: number): Response {
@@ -308,65 +404,66 @@ export class NodeStorage {
   }
 
   public findResponseType(name: string): ResponseType {
-    return this.types.find((type) => type.name === name) || null;
+    return this._types.find((type) => type.name === name) || null;
   }
 
-  // public convertToSwaggerJson(): any {
-  //   const packageJson: PackageJsonScheme = require(resolve(dirname(require.main.filename), 'package.json'));
+  public findParameterByLocationAndName(
+    nodeName: string,
+    endpointName: string,
+    location: ParameterLocation,
+    name: string
+  ): Parameter {
+    const endpoint = this.findEndpointByName(nodeName, endpointName);
 
-  //   packageJson.swapi = packageJson.swapi || {} as SwapiSettings;
+    if (!endpoint) {
+      return null;
+    }
 
-  //   const swaggerJson = {
-  //     swagger: '2.0',
-  //     info: {
-  //       version: packageJson.version,
-  //       title: packageJson.name,
-  //       description: packageJson.description,
-  //       license: {
-  //         name: packageJson.license
-  //       },
-  //       contact: {
-  //         name: packageJson.author
-  //       }
-  //     },
-  //     host: packageJson.swapi.host,
-  //     basePath: packageJson.swapi.basePath,
-  //     schemes: packageJson.swapi.schemes,
-  //     produces: packageJson.swapi.produces,
-  //     consumes: packageJson.swapi.consumes,
-  //     paths: {}
-  //   } as SwaggerFile;
+    let param;
+    if (location === ParameterLocation.Body) {
+      param = endpoint.body.find((param) => param.name === name);
+    } else if (location === ParameterLocation.Query) {
+      param = endpoint.query.find((param) => param.name === name);
+    } else if (location === ParameterLocation.UrlParam) {
+      param = endpoint.urlParams.find((param) => param.name === name);
+    }
 
-  //   this.nodes.forEach((node) => {
-  //     const fullPath = this.getNodeFullPath(node.name);
+    return param || null;
+  }
 
-  //     swaggerJson.paths[fullPath] = {};
-  //     node.endpoints.forEach((endpoint) => {
-  //       const method: SwaggerFileMethod = {
-  //         description: endpoint.description,
-  //         operationId: endpoint.name,
-  //         // TODO: it should be taken from 
-  //         produces: packageJson.swapi.produces,
-  //         parameters: [],
-  //         responses: {}
-  //       };
+  public findOrCreateParameterByLocationAndName(
+    nodeName: string,
+    endpointName: string,
+    location: ParameterLocation,
+    name: string
+  ): Parameter {
+    let param = this.findParameterByLocationAndName(nodeName, endpointName, location, name);
 
-  //       endpoint
-  //       swaggerJson.paths[fullPath][endpoint.method] = method
-  //     })
+    if (param) {
+      return param;
+    }
 
-  //     const method = {
+    const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
-  //     } as SwaggerFileMethod
-  //   });
-  // }
+    param = generateParamMeta(name);
 
-  // private getNodeFullPath(nodeName: string): string {
-  //   const node = this.findNodeByName(nodeName);
-  //   if (node.relatedTo) {
-  //     return `${ this.findNodeByName(nodeName) }/${ node.path }`
-  //   }
+    if (location === ParameterLocation.Body) {
+      endpoint.body.push(param);
+    } else if (location === ParameterLocation.Query) {
+      endpoint.query.push(param)
+    } else if (location === ParameterLocation.UrlParam) {
+      endpoint.urlParams.push(param)
+    }
 
-  //   return node.path;
-  // }
+    return param;
+  }
+
+  public getNodeFullPath(nodeName: string): string {
+    const node = this.findNodeByName(nodeName);
+    if (node.relatedTo) {
+      return `${ this.getNodeFullPath(node.relatedTo) }/${ node.path }`
+    }
+
+    return `/${node.path}`;
+  }
 }
