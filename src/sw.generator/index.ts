@@ -17,7 +17,7 @@ import {
 import { resolve } from 'path';
 import { concat } from 'lodash';
 import { stringify } from 'json2yaml';
-import { normalizePath } from '../helpers/normalize.path';
+import { pullOutParamsFromUrl, urlResolve } from '../helpers';
 
 export function generateSwaggerJson() {
   const storageInstance = NodeStorage.getInstance();
@@ -29,9 +29,11 @@ export function generateSwaggerJson() {
     const fullPath = storageInstance.getNodeFullPath(node.name);
 
     node.endpoints.forEach((endpoint) => {
-      const method = generateSwaggerJsonMethod(endpoint);
+      const fullEndpointPath = urlResolve(fullPath, endpoint.path);
+      const path = convertToSwaggerUrl(fullEndpointPath);
+      storageInstance.setUrlParamFromFullPath(node.name, endpoint.name)
 
-      const path = convertToSwaggerUrl(urlResolve(fullPath, endpoint.path));
+      const method = generateSwaggerJsonMethod(endpoint);
 
       if (swaggerJson.paths.hasOwnProperty(path)) {
         swaggerJson.paths[path][endpoint.method] = method;
@@ -251,7 +253,7 @@ function generateSwaggerJsonDefinitionType(res: ResponseType): SwaggerJsonSchema
 //#region Helpers
 
 function convertToSwaggerUrl(url: string) {
-  return url.replace(/:[a-zA-Z]*/, '$${$&}').replace(/:/g, '');
+  return url.replace(/:[a-zA-Z]*/g, '$${$&}').replace(/:/g, '');
 }
 
 function isReference(type: string) {
@@ -264,16 +266,6 @@ function createSwaggerReference(type: string) {
 
 function swaggerJsonToYaml(swJson: SwaggerJson) {
   return stringify(swJson);
-}
-
-function urlResolve(firstUrl: string, secondUrl: string) {
-  firstUrl = normalizePath(firstUrl);
-  secondUrl = normalizePath(secondUrl);
-
-  let resolved = firstUrl === '//' || firstUrl === '/'  ? firstUrl : `/${ firstUrl }/`;
-  resolved += secondUrl === '//' || secondUrl === '/'  ? secondUrl : `/${ secondUrl }/`;
-
-  return resolved.replace(/\/\//g, '/');
 }
 
 //#endregion

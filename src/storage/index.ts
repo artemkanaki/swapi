@@ -12,7 +12,7 @@ import {
   // PackageJsonScheme, SwaggerFile, SwapiSettings, SwaggerFileMethod
 } from '../types';
 import { concat } from 'lodash';
-import { generateParamMeta } from '../helpers';
+import { generateParamMeta, urlResolve, pullOutParamsFromUrl } from '../helpers';
 
 export class NodeStorage {
   private static instance: NodeStorage;
@@ -48,12 +48,19 @@ export class NodeStorage {
     this._nodes.push(node);
   }
 
-  public createNode(name: string, path: string, relatedTo: string = null, endpoints: Array<Endpoint> = []): Node {
+  public createNode(
+    name: string,
+    path: string,
+    relatedTo: string = null,
+    endpoints: Array<Endpoint> = [],
+    combiner: string = null
+  ): Node {
     const node = {
       name,
       path,
       relatedTo,
-      endpoints
+      endpoints,
+      combiner
     } as Node;
 
     this.addNode(node);
@@ -72,6 +79,7 @@ export class NodeStorage {
     storedNode.name = node.name ? node.name : storedNode.name;
     storedNode.path = node.path ? node.path : storedNode.path;
     storedNode.relatedTo = node.relatedTo ? node.relatedTo : storedNode.relatedTo;
+    storedNode.combiner = node.combiner ? node.combiner : storedNode.combiner;
   }
 
   public addEndpoint(nodeName: string, endpoint: Endpoint): void {
@@ -239,6 +247,18 @@ export class NodeStorage {
     param.required = true;
 
     this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.UrlPath);
+  }
+
+  public setUrlParamFromFullPath(nodeName: string, endpointName: string) {
+    const nodeFullPath = this.getNodeFullPath(nodeName);
+    const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
+
+    const fullEndpointPath = urlResolve(nodeFullPath, endpoint.path);
+    const urlParams = pullOutParamsFromUrl(fullEndpointPath);
+
+    this.upsertEndpoint(nodeName, endpointName, { name: endpointName, urlParams } as Endpoint);
+
+    return;
   }
 
   public addBodyParam(nodeName: string, endpointName: string, param: Parameter): void {
@@ -457,7 +477,10 @@ export class NodeStorage {
   public getNodeFullPath(nodeName: string): string {
     const node = this.findNodeByName(nodeName);
     if (node.relatedTo) {
-      return `${ this.getNodeFullPath(node.relatedTo) }/${ node.path }`
+      const partOfPath = [ this.getNodeFullPath(node.relatedTo), node.combiner, node.path ]
+        .filter((part) => part !== null);
+
+      return urlResolve(...partOfPath);
     }
 
     return `/${node.path}`;

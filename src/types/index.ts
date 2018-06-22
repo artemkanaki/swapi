@@ -31,6 +31,7 @@ export interface Node {
   relatedTo: string;
   path: string;
   name: string;
+  combiner: string;
 }
 
 export interface Endpoint {

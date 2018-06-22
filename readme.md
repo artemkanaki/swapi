@@ -10,7 +10,7 @@ If you sometime wrote swagger file by yourself, then you should know how painful
 
 Whole functionality is based on TypeScript Decorators. Here is an explanation of decorators in this repo:
 
-- `@BaseUrl(url: string, relatedTo: { new(): A })` - declares a path which will be used as a prefix for endpoints. url may be wrote wrapped in slashes, or not, it does not matter. Also there is second parameter, which means a parent resource. So declared resource will be nested. Also notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type;
+- `@BaseUrl(url: string, relatedTo: { new(): A }, pathCombiner: string = null)` - declares a path which will be used as a prefix for endpoints. url may be wrote wrapped in slashes, or not, it does not matter. Also there is second parameter, which means a parent resource. So declared resource will be nested. Also notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type. `pathCombiner` may be specified if you need to add extra params, or just part of url between parent's and children's endpoints.;
 - `@Get(url: string, description?: string)` - declares new `GET` endpoint.
 - `@Post(url: string, description?: string)` - declares new `POST` endpoint.
 - `@Put(url: string, description?: string)` - declares new `PUT` endpoint.
@@ -28,10 +28,14 @@ You may register custom type using `addResponseType` function. `addResponseType(
 Here is an example of usage:
 
 ```TS
+const ownerBaseUrl = 'owners';
+const dogBaseUrl = 'dogs';
+
+//#region Valid example of usage
 @BaseUrl(ownerBaseUrl)
 class Owner {
   @Get('/')
-  @Response(200, '#/Owner', true) // or @Response(200, '#/Owner[]')
+  @Response(200, '#/Owner[]')
   public getOwners() {
     // ...
   }
@@ -44,7 +48,7 @@ class Owner {
   }
 }
 
-@BaseUrl(dogBaseUrl, Owner)
+@BaseUrl(dogBaseUrl, Owner, '/:ownerId/')
 class Dog {
   @Get('/')
   @Query('token', 'string')
@@ -99,6 +103,7 @@ class Dog {
     // ...
   }
 }
+//#endregion
 
 const dogScheme = {
   name: 'string',
@@ -131,7 +136,7 @@ Result:
     title: "swapi"
     description: ""
     license:
-      name: "ISC"
+      name: "MIT"
     contact:
       name: "A.Kanaki"
   host: "host"
@@ -143,7 +148,7 @@ Result:
   consumes:
     - "application/json"
   paths:
-    /owner/:
+    /owners/:
       get:
         description: ""
         operationId: "getOwners"
@@ -156,7 +161,7 @@ Result:
               type: "array"
               items:
                 $ref: "#/definitions/Owner"
-    /owner/${id}/:
+    /owners/${id}/:
       get:
         description: ""
         operationId: "getOwnerById"
@@ -173,7 +178,7 @@ Result:
             in: "path"
             required: true
             type: "number"
-    /owner/dog/:
+    /owners/${ownerId}/dogs/:
       get:
         description: ""
         operationId: "getDogs"
@@ -192,7 +197,12 @@ Result:
             in: "query"
             required: false
             type: "string"
-    /owner/dog/${id}/:
+          -
+            name: "ownerId"
+            in: "path"
+            required: true
+            type: "string"
+    /owners/${ownerId}/dogs/${id}/:
       get:
         description: ""
         operationId: "getDogById"
@@ -214,6 +224,11 @@ Result:
             in: "path"
             required: true
             type: "number"
+          -
+            name: "ownerId"
+            in: "path"
+            required: true
+            type: "string"
       post:
         description: ""
         operationId: "createDog"
@@ -235,6 +250,11 @@ Result:
             in: "path"
             required: true
             type: "number"
+          -
+            name: "ownerId"
+            in: "path"
+            required: true
+            type: "string"
           -
             name: "createDogBody"
             in: "body"
@@ -271,6 +291,11 @@ Result:
             required: true
             type: "number"
           -
+            name: "ownerId"
+            in: "path"
+            required: true
+            type: "string"
+          -
             name: "updateDogBody"
             in: "body"
             schema:
@@ -305,7 +330,12 @@ Result:
             in: "path"
             required: true
             type: "number"
-    /owner/dog/${id}/owner/:
+          -
+            name: "ownerId"
+            in: "path"
+            required: true
+            type: "string"
+    /owners/${ownerId}/dogs/${id}/owner/:
       patch:
         description: ""
         operationId: "updateDogOwner"
@@ -331,6 +361,11 @@ Result:
             in: "path"
             required: true
             type: "number"
+          -
+            name: "ownerId"
+            in: "path"
+            required: true
+            type: "string"
           -
             name: "updateDogOwnerBody"
             in: "body"

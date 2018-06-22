@@ -17,8 +17,8 @@ import { generateSwaggerJson, generateSwaggerYaml } from '../src/sw.generator';
 import { sortBy } from 'lodash';
 
 describe('AIO test', () => {
-  const ownerBaseUrl = 'owner';
-  const dogBaseUrl = 'dog';
+  const ownerBaseUrl = 'owners';
+  const dogBaseUrl = 'dogs';
 
   //#region Valid example of usage
   @BaseUrl(ownerBaseUrl)
@@ -37,7 +37,7 @@ describe('AIO test', () => {
     }
   }
 
-  @BaseUrl(dogBaseUrl, Owner)
+  @BaseUrl(dogBaseUrl, Owner, '/:ownerId/')
   class Dog {
     @Get('/')
     @Query('token', 'string')
