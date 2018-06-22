@@ -10,7 +10,7 @@ If you sometime wrote swagger file by yourself, then you should know how painful
 
 Whole functionality is based on TypeScript Decorators. Here is an explanation of decorators in this repo:
 
-- `@BaseUrl(url: string, relatedTo: { new(): A })` - declares a path which will be used as a prefix for endpoints. url may be wrote wrapped in slashes, or not, it does not matter. Also there is second parameter (as in example `@BaseUrl('Dogs', Owner)`). This means that dogs endpoints will have extra owner prefix, so it will be nested. Notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type;
+- `@BaseUrl(url: string, relatedTo: { new(): A })` - declares a path which will be used as a prefix for endpoints. url may be wrote wrapped in slashes, or not, it does not matter. Also there is second parameter, which means a parent resource. So declared resource will be nested. Also notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type;
 - `@Get(url: string, description?: string)` - declares new `GET` endpoint.
 - `@Post(url: string, description?: string)` - declares new `POST` endpoint.
 - `@Put(url: string, description?: string)` - declares new `PUT` endpoint.
