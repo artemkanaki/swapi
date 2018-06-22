@@ -11,7 +11,7 @@
     "express"
   ],
   "author": "A.Kanaki",
-  "license": "ISC",
+  "license": "MIT",
   "swapi": {
     "host": "host",
     "basePath": "/",
