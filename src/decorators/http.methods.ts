@@ -35,7 +35,6 @@ function BasicHttpMethodDecorator(
     const nodeName = target.constructor.name;
 
     const endpoint = {
-      // FIXME: it should be generated as toCamelCase(nodeName + propertyName);
       name: endpointName,
       path,
       method,
