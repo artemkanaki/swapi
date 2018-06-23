@@ -557,7 +557,7 @@ class Teacher extends AbstractEntity {
 
 ## Integration with package.json
 
-swapi is integrated with `package.json`. This means that some of `package.json` will be used in swagger declaration. Here is the scheme of fields which are used:
+swapi is integrated with `package.json`. This means that some of fields of `package.json` will be used in swagger declaration. Here is the scheme of fields which are used:
 
 ```JSON
 {
