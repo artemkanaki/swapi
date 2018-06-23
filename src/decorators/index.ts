@@ -1,3 +1,4 @@
+export * from './abstract.router';
 export * from './basic.url';
 export * from './http.methods';
 export * from './response';

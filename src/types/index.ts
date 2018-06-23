@@ -32,6 +32,7 @@ export interface Node {
   path: string;
   name: string;
   combiner: string;
+  isAbstract: boolean;
 }
 
 export interface Endpoint {

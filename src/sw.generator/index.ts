@@ -12,10 +12,11 @@ import {
   Endpoint,
   SwaggerJsonMethodParameter,
   Response,
-  ResponseType
+  ResponseType,
+  Node
 } from '../types';
 import { resolve } from 'path';
-import { concat } from 'lodash';
+import { concat, camelCase } from 'lodash';
 import { stringify } from 'json2yaml';
 import { pullOutParamsFromUrl, urlResolve } from '../helpers';
 
@@ -25,24 +26,26 @@ export function generateSwaggerJson() {
   const packageJson = getPackageJson();
   const swaggerJson = generateSwaggerJsonBody(packageJson);
 
-  storageInstance.nodes.forEach((node) => {
-    const fullPath = storageInstance.getNodeFullPath(node.name);
+  storageInstance.nodes
+    .filter((node) => !node.isAbstract)
+    .forEach((node) => {
+      const fullPath = storageInstance.getNodeFullPath(node.name);
 
-    node.endpoints.forEach((endpoint) => {
-      const fullEndpointPath = urlResolve(fullPath, endpoint.path);
-      const path = convertToSwaggerUrl(fullEndpointPath);
-      storageInstance.setUrlParamFromFullPath(node.name, endpoint.name)
+      node.endpoints.forEach((endpoint) => {
+        const fullEndpointPath = urlResolve(fullPath, endpoint.path);
+        const path = convertToSwaggerUrl(fullEndpointPath);
+        storageInstance.setUrlParamFromFullPath(node.name, endpoint.name)
 
-      const method = generateSwaggerJsonMethod(endpoint);
+        const method = generateSwaggerJsonMethod(node, endpoint);
 
-      if (swaggerJson.paths.hasOwnProperty(path)) {
-        swaggerJson.paths[path][endpoint.method] = method;
-      } else {
-        swaggerJson.paths[path] = {
-          [endpoint.method]: method
-        };
-      }
-    });
+        if (swaggerJson.paths.hasOwnProperty(path)) {
+          swaggerJson.paths[path][endpoint.method] = method;
+        } else {
+          swaggerJson.paths[path] = {
+            [endpoint.method]: method
+          };
+        }
+      });
   });
 
   storageInstance.types.forEach((type) => {
@@ -93,12 +96,12 @@ function generateSwaggerJsonBody(packageJson: PackageJsonScheme): SwaggerJson {
   } as SwaggerJson
 }
 
-function generateSwaggerJsonMethod(endpoint: Endpoint): SwaggerJsonMethod {
+function generateSwaggerJsonMethod(node: Node, endpoint: Endpoint): SwaggerJsonMethod {
   const packageJson = getPackageJson();
 
   const method = {
     description: endpoint.description,
-    operationId: endpoint.name,
+    operationId: camelCase(`${node.name} ${endpoint.name}`),
     // TODO: it should be taken from method data
     produces: packageJson.swapi.produces,
     responses: endpoint.responses.length ? {} : getDefaultResponseWithStatus(endpoint.method)

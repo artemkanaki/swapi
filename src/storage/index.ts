@@ -76,10 +76,12 @@ export class NodeStorage {
         this.upsertEndpoint(node.name, endpoint.name, endpoint);
       });
     }
+
     storedNode.name = node.name ? node.name : storedNode.name;
     storedNode.path = node.path ? node.path : storedNode.path;
     storedNode.relatedTo = node.relatedTo ? node.relatedTo : storedNode.relatedTo;
     storedNode.combiner = node.combiner ? node.combiner : storedNode.combiner;
+    storedNode.isAbstract = node.isAbstract ? node.isAbstract : storedNode.isAbstract;
   }
 
   public addEndpoint(nodeName: string, endpoint: Endpoint): void {
@@ -115,10 +117,10 @@ export class NodeStorage {
   public upsertEndpoint(nodeName: string, endpointName: string, endpoint: Endpoint) {
     const storedEndpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
-    storedEndpoint.description = endpoint.description ? endpoint.description : storedEndpoint.description;
-    storedEndpoint.method = endpoint.method ? endpoint.method : storedEndpoint.method;
-    storedEndpoint.name = endpoint.name ? endpoint.name : storedEndpoint.name;
-    storedEndpoint.path = endpoint.path ? endpoint.path : storedEndpoint.path;
+    storedEndpoint.description = endpoint.description || storedEndpoint.description;
+    storedEndpoint.method = endpoint.method || storedEndpoint.method;
+    storedEndpoint.name = endpoint.name || storedEndpoint.name;
+    storedEndpoint.path = endpoint.path || storedEndpoint.path;
 
     if (endpoint.hasOwnProperty('urlParams')) {
       Object.entries(endpoint.urlParams).forEach(([, param ]) => {
@@ -156,6 +158,58 @@ export class NodeStorage {
     if (endpoint.hasOwnProperty('response')) {
       endpoint.responses.forEach((response) => {
         this.upsertResponse(nodeName, endpoint.name, response.status, response);
+      });
+    }
+  }
+
+  public complementEndpoint(nodeName: string, endpointName: string, endpoint: Endpoint) {
+    const storedEndpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
+
+    storedEndpoint.description = storedEndpoint.description || endpoint.description;
+    storedEndpoint.method = storedEndpoint.method || endpoint.method;
+    storedEndpoint.name = storedEndpoint.name || endpoint.name;
+    storedEndpoint.path = storedEndpoint.path || endpoint.path;
+
+    if (endpoint.hasOwnProperty('urlParams')) {
+      Object.entries(endpoint.urlParams).forEach(([, param ]) => {
+        const storedParam =
+          this.findParameterByLocationAndName(nodeName, storedEndpoint.name, ParameterLocation.UrlPath, param.name);
+
+        if (storedParam) {
+          this.addUrlParam(nodeName, storedEndpoint.name, param);
+        }
+      });
+    }
+
+    if (endpoint.hasOwnProperty('query')) {
+      Object.entries(endpoint.query).forEach(([, param ]) => {
+        const storedParam =
+          this.findParameterByLocationAndName(nodeName, storedEndpoint.name, ParameterLocation.Query, param.name);
+
+        if (storedParam) {
+          this.addQueryParam(nodeName, storedEndpoint.name, param);
+        }
+      });
+    }
+
+    if (endpoint.hasOwnProperty('body')) {
+      Object.entries(endpoint.body).forEach(([, param ]) => {
+        const storedParam =
+          this.findParameterByLocationAndName(nodeName, storedEndpoint.name, ParameterLocation.Body, param.name);
+
+        if (!storedParam) {
+          this.addBodyParam(nodeName, storedEndpoint.name, param);
+        }
+      });
+    }
+
+    if (endpoint.hasOwnProperty('response')) {
+      endpoint.responses.forEach((response) => {
+        const storedResponse = this.findResponseByStatus(nodeName, storedEndpoint.name, response.status);
+
+        if (storedResponse) {
+          this.upsertResponse(nodeName, endpoint.name, response.status, response);
+        }
       });
     }
   }
