@@ -67,7 +67,7 @@ describe('AIO test', () => {
     @Query('token', 'string')
     @Param('id', 'number')
     @Body({ name: 'string', owner: 'string' })
-    @Response(204)
+    @Response(204, '#/Dog')
     @Response(403, 'string', false, 'FORBIDDEN')
     public updateDog() {
       // ...
@@ -207,7 +207,7 @@ describe('AIO test', () => {
       }
     ]);
 
-    const [ forbiddenResponse, okResponse ] = updateDogEndpoint.responses;
+    const [ okResponse, forbiddenResponse ] = sortBy(updateDogEndpoint.responses, 'status');
 
     expect(okResponse.status).toEqual(204);
     expect(okResponse.description).toEqual('OK');

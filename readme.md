@@ -174,7 +174,7 @@ Result:
     /owners/:
       get:
         description: ""
-        operationId: "getOwners"
+        operationId: "ownerGetOwners"
         produces:
           - "application/json"
         responses:
@@ -187,7 +187,7 @@ Result:
     /owners/${id}/:
       get:
         description: ""
-        operationId: "getOwnerById"
+        operationId: "ownerGetOwnerById"
         produces:
           - "application/json"
         responses:
@@ -204,7 +204,7 @@ Result:
     /owners/${ownerId}/dogs/:
       get:
         description: ""
-        operationId: "getDogs"
+        operationId: "dogGetDogs"
         produces:
           - "application/json"
         responses:
@@ -228,7 +228,7 @@ Result:
     /owners/${ownerId}/dogs/${id}/:
       get:
         description: ""
-        operationId: "getDogById"
+        operationId: "dogGetDogById"
         produces:
           - "application/json"
         responses:
@@ -254,7 +254,7 @@ Result:
             type: "string"
       post:
         description: ""
-        operationId: "createDog"
+        operationId: "dogCreateDog"
         produces:
           - "application/json"
         responses:
@@ -279,7 +279,7 @@ Result:
             required: true
             type: "string"
           -
-            name: "createDogBody"
+            name: "dogCreateDogBody"
             in: "body"
             schema:
               type: "object"
@@ -290,14 +290,14 @@ Result:
                   type: "string"
       put:
         description: ""
-        operationId: "updateDog"
+        operationId: "dogUpdateDog"
         produces:
           - "application/json"
         responses:
           204:
             description: "OK"
             schema:
-              type: "string"
+              $ref: "#/definitions/Dog"
           403:
             description: "FORBIDDEN"
             schema:
@@ -319,7 +319,7 @@ Result:
             required: true
             type: "string"
           -
-            name: "updateDogBody"
+            name: "dogUpdateDogBody"
             in: "body"
             schema:
               type: "object"
@@ -330,7 +330,7 @@ Result:
                   type: "string"
       delete:
         description: ""
-        operationId: "deleteDog"
+        operationId: "dogDeleteDog"
         produces:
           - "application/json"
         responses:
@@ -361,7 +361,7 @@ Result:
     /owners/${ownerId}/dogs/${id}/owner/:
       patch:
         description: ""
-        operationId: "updateDogOwner"
+        operationId: "dogUpdateDogOwner"
         produces:
           - "application/json"
         responses:
@@ -390,7 +390,7 @@ Result:
             required: true
             type: "string"
           -
-            name: "updateDogOwnerBody"
+            name: "dogUpdateDogOwnerBody"
             in: "body"
             schema:
               type: "object"
