@@ -12,7 +12,7 @@ Whole functionality is based on TypeScript Decorators. In next articles you may 
 
 ### BaseUrl
 
-`@BaseUrl(url: string, relatedTo: { new(): A }, pathCombiner: string = null)`\
+`@BaseUrl(url: string, relatedTo: { new(): A }, pathCombiner: string = null)`
 
 Declares a path which will be used as a prefix for endpoints. You may pass it with slashes in begin and end of url, it does not matter. The second parameter is class of parent resource. This means that declared resource will be nested into other resource.\
 Notice that url may be in express format. Url `owners/:id`, will be parsed, and parameter `id` will be automatically added in path params, and will have `string` type.\
@@ -34,7 +34,7 @@ Notice that url may be in express format. Url `owners/:id`, will be parsed, and 
 
 ### Response declaration
 
-`@Response(status: number, type?: string = 'string', isArray?: boolean = false, description?: string = '')`\
+`@Response(status: number, type?: string = 'string', isArray?: boolean = false, description?: string = '')`
 
 Declares endpoint's response. May be used few times if you want declare few responses for single endpoint. `type` parameter may take simple types, such as `string` or `number`, or custom types. If you want declare custom type, then you should pass the name of custom type in format `'#/' + typeName`, where `typeName` is the name of type.
 
@@ -42,7 +42,7 @@ You may register custom type using `addResponseType` function. `addResponseType(
 
 ### AbstractRouter
 
-`@AbstractRouter`\
+`@AbstractRouter`
 
 Marks router as abstract. It wont be declared in swagger docs, but all inherited routers will get all endpoints of the abstract router.
 
