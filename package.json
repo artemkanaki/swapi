@@ -7,7 +7,7 @@
     "test": "jest --config ./tests/jest.config.json",
     "build": "tsc",
     "precommit": "npm run test && npm run build",
-    "publish": "npm run precommit && git push && npm publish"
+    "publish": "npm run test && npm run build && git push && npm publish"
   },
   "keywords": [
     "decorators",
