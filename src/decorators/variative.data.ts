@@ -25,11 +25,11 @@ function setBodyType(target: any, methodName: string, type: BodyType) {
   storageInstance.setBodyType(nodeName, methodName, BodyType.String);
 }
 
-export function Param(name: string, type: string) {
+export function Param(name: string | Object, type?: string) {
   return VariativeDataDecorator(name, ParameterLocation.UrlPath, type);
 }
 
-export function Query(name: string, type: string, required?: boolean) {
+export function Query(name: string | Object, type?: string, required?: boolean) {
   return VariativeDataDecorator(name, ParameterLocation.Query, type, required);
 }
 

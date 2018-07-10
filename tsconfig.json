@@ -9,12 +9,6 @@
     "outDir": "./dist",
     "mapRoot": "./dist",
     "declaration": true,
-    // "baseUrl": "./",
-    // "paths": {
-    //   "json2yaml": [
-    //       "@types/json2yaml/index.d.ts"
-    //   ],
-    // },
     "typeRoots": [
       "./node_modules/@types",
       "./@types"
