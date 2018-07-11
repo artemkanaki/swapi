@@ -12,7 +12,7 @@ import {
   addResponseType
 } from '../src/decorators';
 import { NodeStorage } from '../src/storage';
-import { Node, Response as ResponseType, Parameter } from '../src/types';
+import { Response as ResponseType, Parameter } from '../src/types';
 import { generateSwaggerJson, generateSwaggerYaml } from '../src/sw.generator';
 import { sortBy } from 'lodash';
 
@@ -184,26 +184,30 @@ describe('AIO test', () => {
       {
         name: 'name',
         required: false,
-        type: 'string'
+        type: 'string',
+        isArray: false
       },
       {
         name: 'owner',
         required: false,
-        type: 'string'
+        type: 'string',
+        isArray: false
       }
     ]);
     expect(updateDogEndpoint.query).toEqual([
       {
         name: 'token',
         required: false,
-        type: 'string'
+        type: 'string',
+        isArray: false
       }
     ]);
     expect(updateDogEndpoint.urlParams).toEqual([
       {
         name: 'id',
         required: true,
-        type: 'number'
+        type: 'number',
+        isArray: false
       }
     ]);
 
@@ -227,17 +231,20 @@ describe('AIO test', () => {
       {
         name: 'name',
         required: false,
-        type: 'string'
+        type: 'string',
+        isArray: false
       },
       {
         name: 'id',
         required: false,
-        type: 'number'
+        type: 'number',
+        isArray: false
       },
       {
         name: 'owner',
         required: false,
-        type: 'string'
+        type: 'string',
+        isArray: false
       }
     ], ['name']));
   });

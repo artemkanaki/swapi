@@ -12,13 +12,6 @@ export enum ParameterLocation {
   Query = 'query'
 }
 
-export enum BodyType {
-  Object = 'object',
-  Array = 'array',
-  String = 'string',
-  Number = 'number'
-}
-
 export enum Types {
   Object = 'object',
   Array = 'array',
@@ -43,19 +36,17 @@ export interface Endpoint {
   description?: string,
   urlParams: Array<Parameter>;
   body: Array<Parameter>;
-  bodyType: BodyType;
+  bodyType: Types | string;
+  bodyIsArray: boolean;
   query: Array<Parameter>;
   responses: Array<Response>;
 }
-
-// export interface Parameters {
-//   [ key: string ]: Parameter
-// }
 
 export interface Parameter {
   name: string;
   type: string;
   required?: boolean;
+  isArray?: boolean;
   // TODO: fill it
   description?: string;
 }

@@ -28,9 +28,11 @@ Notice that url may be in express format. Url `owners/:id`, will be parsed, and 
 
 ### Request params
 
-- `@Param(name: string, type?: string = 'string')` - declares url's parameter. For example if you want change type of `id` param in this url `owners/:id`, then you should write `@Param('id', 'number')`, or `@Param({ id: 'number', ... })` if you want declare more then one param.
-- `@Query(name: string, type?: string = 'string', required: boolean = false)` - declares query's parameter. may have third param, which marks param as required. Also param may be marked as required if last symbol of type will be `*`. So `@Query('token', 'string', true)` will be equal `@Query('token', 'string*')`. It's useful when you declare more than one query param, such as `@Query({ token: 'string*', q: 'string' })`
-- `@Body(name: string, type?: string = 'string', required: boolean = false)` - declares body parameter. Has all features as `@Query` decorator.
+- `@Param(name: string | Object, type?: string = 'string')` - declares url's parameter. For example if you want change type of `id` param in this url `owners/:id`, then you should write `@Param('id', 'number')`, or `@Param({ id: 'number', ... })` if you want declare more then one param.
+- `@Body(name: string | Object, type?: string = 'string', required: boolean = false, isArray: boolean = false)` - declares body's parameter. It may have third param, which marks param as required. Also param may be marked as required if last symbol of type will be `*`. So `@Body('token', 'string', true)` will be equal `@Body('token', 'string*')`. It's useful when you declare more than one body param, such as `@Body({ token: 'string*', q: 'string' })`. Also you may declare that field is array. For that you should specify forth param, or specify type as `string[]`. So if you will write, `@Body({ tokens: 'string[]' })`, then it'll be declared as array. If you want to declare body as reference type, then you may specify first parameter as `'#/' + DefinedType`, where `DefinedType` is name of defined custom type.
+- `@Query(name: string, type?: string = 'string', required: boolean = false, isArray: boolean = false)` - declares body parameter. Has all features as `@Body` decorator.
+
+By default body has an `object` type, but you may change it using decorators `@BodyIsNumber`, `@BodyIsString`. Also, if you want mark body as array, then you should use decorator `@BodyIsArray`. All this decorators does not takes input params. For mode details look at third example.
 
 ### Response declaration
 
@@ -553,6 +555,189 @@ class Teacher extends AbstractEntity {
             required: true
             type: "string"
   definitions: {}
+```
+
+### Array declaration
+
+Here is an example how you may mark fields or body as array:
+
+```TS
+@BaseUrl('/dogs/')
+class Dog {
+  @Post('/')
+  @Body({
+    name: 'string*',
+    toys: 'string[]*'
+  })
+  @Response(201, '#/Dog')
+  public createDog() {
+
+  }
+
+  @Delete('/')
+  @BodyIsArray
+  @BodyIsString
+  public deleteDogs() {
+
+  }
+
+  @Post('/find-or-create')
+  @Body('#/Dog')
+  @Response(200, '#/Dog')
+  @Response(201, '#/Dog')
+  public findOrCreate() {
+
+  }
+}
+
+@BaseUrl('/owners/')
+class Owner {
+  @Post('/')
+  @Body('name', 'string*')
+  @Body('dogIds', 'string[]*')
+  @Response(201, '#/Owner')
+  public createOwner() {
+
+  }
+}
+```
+
+```YAML
+---
+  swagger: "2.0"
+  info:
+    version: "0.0.3"
+    title: "swapi"
+    description: ""
+    license:
+      name: "MIT"
+    contact:
+      name: "A.Kanaki"
+  host: "host"
+  basePath: "/"
+  schemes:
+    - "https"
+  produces:
+    - "application/json"
+  consumes:
+    - "application/json"
+  paths:
+    /dogs/:
+      post:
+        description: ""
+        operationId: "dogCreateDog"
+        produces:
+          - "application/json"
+        responses:
+          201:
+            description: "OK"
+            schema:
+              $ref: "#/definitions/Dog"
+        parameters:
+          -
+            name: "createDogBody"
+            in: "body"
+            schema:
+              required:
+                - "name"
+                - "toys"
+              type: "object"
+              properties:
+                name:
+                  type: "string"
+                toys:
+                  type: "array"
+                  items:
+                    type: "string"
+      delete:
+        description: ""
+        operationId: "dogDeleteDogs"
+        produces:
+          - "application/json"
+        responses:
+          204:
+            description: "OK"
+            schema:
+              type: "string"
+        parameters:
+          -
+            name: "deleteDogsBody"
+            in: "body"
+            schema:
+              type: "array"
+              items:
+                type: "string"
+    /dogs/find-or-create/:
+      post:
+        description: ""
+        operationId: "dogFindOrCreate"
+        produces:
+          - "application/json"
+        responses:
+          200:
+            description: "OK"
+            schema:
+              $ref: "#/definitions/Dog"
+          201:
+            description: "OK"
+            schema:
+              $ref: "#/definitions/Dog"
+        parameters:
+          -
+            name: "findOrCreateBody"
+            in: "body"
+            schema:
+              $ref: "#/definitions/Dog"
+    /owners/:
+      post:
+        description: ""
+        operationId: "ownerCreateOwner"
+        produces:
+          - "application/json"
+        responses:
+          201:
+            description: "OK"
+            schema:
+              $ref: "#/definitions/Owner"
+        parameters:
+          -
+            name: "createOwnerBody"
+            in: "body"
+            schema:
+              required:
+                - "dogIds"
+                - "name"
+              type: "object"
+              properties:
+                dogIds:
+                  type: "array"
+                  items:
+                    type: "string"
+                name:
+                  type: "string"
+  definitions:
+    Dog:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        toys:
+          type: "array"
+          items:
+            type: "string"
+    Owner:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+        name:
+          type: "string"
+        dogs:
+          type: "array"
+          items:
+            $ref: "#/definitions/Dog"
 ```
 
 ## Integration with package.json

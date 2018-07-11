@@ -6,7 +6,6 @@ import {
   Response,
   Hashtable,
   ResponseType,
-  BodyType,
   ParameterLocation,
   Types,
   // PackageJsonScheme, SwaggerFile, SwapiSettings, SwaggerFileMethod
@@ -106,7 +105,8 @@ export class NodeStorage {
       urlParams: [],
       query: [],
       responses: [],
-      bodyType: null
+      bodyType: null,
+      bodyIsArray: false
     };
 
     this.addEndpoint(nodeName, endpoint);
@@ -261,6 +261,7 @@ export class NodeStorage {
     storedParam.name = param.name ? param.name : storedParam.name;
     storedParam.type = param.type ? param.type : storedParam.type;
     storedParam.required = typeof param.required === 'boolean' ? param.required : storedParam.required;
+    storedParam.isArray = typeof param.isArray === 'boolean' ? param.isArray : storedParam.isArray;
   }
 
   public addQueryParam(nodeName: string, endpointName: string, param: Parameter): void {
@@ -320,7 +321,7 @@ export class NodeStorage {
 
     this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.Body);
 
-    this.setBodyTypeIfEmpty(nodeName, endpointName, BodyType.Object);
+    this.setBodyTypeIfEmpty(nodeName, endpointName, Types.Object);
   }
 
   public createBodyParam(
@@ -332,7 +333,7 @@ export class NodeStorage {
   ) {
     this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.Body);
 
-    this.setBodyTypeIfEmpty(nodeName, endpointName, BodyType.Object);
+    this.setBodyTypeIfEmpty(nodeName, endpointName, Types.Object);
   }
 
   public upsertBodyParam(nodeName: string, endpointName: string, param: Parameter) {
@@ -340,16 +341,22 @@ export class NodeStorage {
 
     this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.Body);
 
-    this.setBodyTypeIfEmpty(nodeName, endpointName, BodyType.Object);
+    this.setBodyTypeIfEmpty(nodeName, endpointName, Types.Object);
   }
 
-  public setBodyType(nodeName: string, endpointName: string, type: BodyType) {
+  public setBodyType(nodeName: string, endpointName: string, type: Types | string) {
     const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
     endpoint.bodyType = type;
   }
 
-  public setBodyTypeIfEmpty(nodeName: string, endpointName: string, type: BodyType) {
+  public markBodyAsArray(nodeName: string, endpointName: string) {
+    const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
+
+    endpoint.bodyIsArray = true;
+  }
+
+  public setBodyTypeIfEmpty(nodeName: string, endpointName: string, type: Types) {
     const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
     if (!endpoint.bodyType) {

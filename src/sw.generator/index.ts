@@ -13,12 +13,13 @@ import {
   SwaggerJsonMethodParameter,
   Response,
   ResponseType,
-  Node
+  Node,
+  Parameter
 } from '../types';
 import { resolve } from 'path';
 import { concat, camelCase } from 'lodash';
 import { stringify } from 'json2yaml';
-import { pullOutParamsFromUrl, urlResolve } from '../helpers';
+import { pullOutParamsFromUrl, urlResolve, isReference } from '../helpers';
 
 export function generateSwaggerJson() {
   const storageInstance = NodeStorage.getInstance();
@@ -109,7 +110,7 @@ function generateSwaggerJsonMethod(node: Node, endpoint: Endpoint): SwaggerJsonM
   
   const parameters = prepareSwaggerMethodParams(endpoint, endpoint.name);
   if (parameters.length) {
-    method.parameters = prepareSwaggerMethodParams(endpoint, method.operationId);
+    method.parameters = parameters;
   }
 
   endpoint.responses.forEach((res) => {
@@ -120,21 +121,9 @@ function generateSwaggerJsonMethod(node: Node, endpoint: Endpoint): SwaggerJsonM
 }
 
 function prepareSwaggerMethodParams(endpoint: Endpoint, operationId: string): Array<SwaggerJsonMethodParameter> {
-  const urlParams = endpoint.urlParams.map((param) => ({
-    name: param.name,
-    in: ParameterLocation.UrlPath,
-    description: param.description,
-    required: param.required,
-    type: param.type
-  }));
+  const urlParams = endpoint.urlParams.map((param) => prepareInUrlParam(param, ParameterLocation.UrlPath));
 
-  const queryParams = endpoint.query.map((param) => ({
-    name: param.name,
-    in: ParameterLocation.Query,
-    description: param.description,
-    required: param.required,
-    type: param.type
-  }));
+  const queryParams = endpoint.query.map((param) => prepareInUrlParam(param, ParameterLocation.Query));
 
   const parameters: Array<SwaggerJsonMethodParameter> = concat(queryParams, urlParams);
 
@@ -147,15 +136,66 @@ function prepareSwaggerMethodParams(endpoint: Endpoint, operationId: string): Ar
   return parameters;
 }
 
+function prepareInUrlParam(param: Parameter, location: ParameterLocation) {
+  const preparedParam: any = {
+    name: param.name,
+    in: location,
+    description: param.description,
+    required: param.required,
+  };
+
+  if (param.isArray) {
+    preparedParam.type = Types.Array;
+
+    if (isReference(param.type)) {
+      preparedParam.items = {
+        $ref: param.type
+      };
+    } else {
+      preparedParam.items = {
+        type: param.type
+      };
+    }
+  } else {
+    preparedParam.type = param.type;
+  }
+
+  return preparedParam;
+}
+
+// NOTICE: available types: string, number, object, reference, string[], number[], object[], reference[]
 function prepareSwaggerMethodBodyParameter(endpoint: Endpoint, operationId: string) {
   const bodyParam: any = {
     name: `${ operationId }Body`,
     in: ParameterLocation.Body,
-    schema: {
-      type: endpoint.bodyType,
-      properties: {}
-    }
+    schema: {}
   };
+
+  // NOTICE: prepares simple types (number/string)
+  if (endpoint.bodyType === Types.Number || endpoint.bodyType === Types.String) {
+    if (endpoint.bodyIsArray) {
+      bodyParam.schema.type = Types.Array;
+      bodyParam.schema.items = { type: endpoint.bodyType };
+    } else {
+      bodyParam.schema.type = endpoint.bodyType;
+    }
+    return bodyParam;
+  }
+
+  // NOTICE: prepares ref
+  if (isReference(endpoint.bodyType)) {
+    const ref = createSwaggerReference(endpoint.bodyType);
+    if (endpoint.bodyIsArray) {
+      bodyParam.schema.type = Types.Array;
+      bodyParam.schema.items = { $ref: ref };
+    } else {
+      bodyParam.schema.$ref = ref;
+    }
+
+    return bodyParam;
+  }
+
+  const properties: any = {}
 
   const required = endpoint.body
     .filter((param) => param.required)
@@ -166,15 +206,37 @@ function prepareSwaggerMethodBodyParameter(endpoint: Endpoint, operationId: stri
   }
 
   endpoint.body.forEach((param) => {
-    const schema: { $ref?: string, type?: string } = {};
+    const schema: any = {};
 
-    if (isReference(param.type)) {
-      schema.$ref = createSwaggerReference(param.type);
+    if (param.isArray) {
+      schema.type = Types.Array;
+      if (isReference(param.type)) {
+        const ref = createSwaggerReference(param.type);
+        schema.items = { $ref: ref };
+      } else {
+        schema.items = { type: param.type };
+      }
     } else {
-      schema.type = param.type;
+      if (isReference(param.type)) {
+        schema.$ref = createSwaggerReference(param.type);
+      } else {
+        schema.type = param.type;
+      }
     }
-    bodyParam.schema.properties[param.name] = schema;
+
+    properties[param.name] = schema;
   });
+
+  if (endpoint.bodyIsArray) {
+    bodyParam.schema.type = Types.Array;
+    bodyParam.schema.items = {
+      type: Types.Object,
+      properties
+    }
+  } else {
+    bodyParam.schema.type = Types.Object;
+    bodyParam.schema.properties = properties;
+  }
 
   return bodyParam;
 }
@@ -229,14 +291,28 @@ function generateSwaggerJsonDefinitionType(res: ResponseType): SwaggerJsonSchema
   };
 
   const properties = res.scheme.reduce((props: any, prop) => {
-    if (isReference(prop.type)) {
-      props[prop.name] = {
-        $ref: createSwaggerReference(prop.type)
-      };
+    if (prop.isArray) {
+      props[prop.name] = { type: Types.Array };
+
+      if (isReference(prop.type)) {
+        props[prop.name].items = {
+          $ref: createSwaggerReference(prop.type)
+        };
+      } else {
+        props[prop.name].items = {
+          type: prop.type
+        };
+      }
     } else {
-      props[prop.name] = {
-        type: prop.type
-      };
+      if (isReference(prop.type)) {
+        props[prop.name] = {
+          $ref: createSwaggerReference(prop.type)
+        };
+      } else {
+        props[prop.name] = {
+          type: prop.type
+        };
+      }
     }
 
     return props;
@@ -257,10 +333,6 @@ function generateSwaggerJsonDefinitionType(res: ResponseType): SwaggerJsonSchema
 
 function convertToSwaggerUrl(url: string) {
   return url.replace(/:[a-zA-Z]*/g, '$${$&}').replace(/:/g, '');
-}
-
-function isReference(type: string) {
-  return type.indexOf('#/') === 0;
 }
 
 function createSwaggerReference(type: string) {

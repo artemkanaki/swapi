@@ -1,28 +1,31 @@
-import { generateParamMeta } from '../helpers';
+import { generateParamMeta, isReference } from '../helpers';
 import { NodeStorage } from '../storage';
-import { BodyType, ParameterLocation } from '../types';
+import { Types, ParameterLocation } from '../types';
 
 export function BodyIsArray(target: any, methodName: string) {
-  setBodyType(target, methodName, BodyType.Array);
-}
-
-export function BodyIsObject(target: any, methodName: string) {
-  setBodyType(target, methodName, BodyType.Object);
-}
-
-export function BodyIsString(target: any, methodName: string) {
-  setBodyType(target, methodName, BodyType.String);
-}
-
-export function BodyIsNumber(target: any, methodName: string) {
-  setBodyType(target, methodName, BodyType.Number);
-}
-
-function setBodyType(target: any, methodName: string, type: BodyType) {
   const nodeName = target.constructor.name;
   const storageInstance = NodeStorage.getInstance();
 
-  storageInstance.setBodyType(nodeName, methodName, BodyType.String);
+  storageInstance.markBodyAsArray(nodeName, methodName);
+}
+
+export function BodyIsObject(target: any, methodName: string) {
+  setBodyType(target, methodName, Types.Object);
+}
+
+export function BodyIsString(target: any, methodName: string) {
+  setBodyType(target, methodName, Types.String);
+}
+
+export function BodyIsNumber(target: any, methodName: string) {
+  setBodyType(target, methodName, Types.Number);
+}
+
+function setBodyType(target: any, methodName: string, type: Types) {
+  const nodeName = target.constructor.name;
+  const storageInstance = NodeStorage.getInstance();
+
+  storageInstance.setBodyType(nodeName, methodName, Types.String);
 }
 
 export function Param(name: string | Object, type?: string) {
@@ -43,9 +46,15 @@ function VariativeDataDecorator(
   type?: string,
   required?: boolean
 ) {
-  return (target: any, propertyName: string, descriptor: PropertyDescriptor) => {
+  return (target: any, endpointName: string, descriptor: PropertyDescriptor) => {
     const nodeName = target.constructor.name;
     const storageInstance = NodeStorage.getInstance();
+
+    // NOTICE: works in case `@Body('#/Entity')`
+    if (typeof name === 'string' && isReference(name)) {
+      storageInstance.setBodyType(nodeName, endpointName, name);
+      return;
+    }
 
     let addParam: Function;
     if (location === ParameterLocation.Body) {
@@ -59,13 +68,13 @@ function VariativeDataDecorator(
     if (typeof name === 'string') {
       const param = generateParamMeta(name, type, required);
       
-      addParam.call(storageInstance, nodeName, propertyName, param);
+      addParam.call(storageInstance, nodeName, endpointName, param);
     } else {
       Object
         .entries(name)
         .forEach(([ name, type ]) => {
           const param = generateParamMeta(name, type, required);
-          addParam.call(storageInstance, nodeName, propertyName, param);
+          addParam.call(storageInstance, nodeName, endpointName, param);
         });
     }
   }
