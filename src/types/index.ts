@@ -9,7 +9,8 @@ export enum HttpMethods {
 export enum ParameterLocation {
   UrlPath = 'path',
   Body = 'body',
-  Query = 'query'
+  Query = 'query',
+  Header = 'header'
 }
 
 export enum Types {
@@ -34,6 +35,7 @@ export interface Endpoint {
   path: string;
   method: HttpMethods,
   description?: string,
+  header: Array<Parameter>;
   urlParams: Array<Parameter>;
   body: Array<Parameter>;
   bodyType: Types | string;

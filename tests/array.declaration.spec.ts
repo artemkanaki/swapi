@@ -1,4 +1,4 @@
-import { Post, BaseUrl, Body, Response, generateSwaggerYaml, addResponseType, Get, BodyIsArray, Delete, Patch, generateSwaggerJson, BodyIsString } from '../src';
+import { Post, BaseUrl, Body, Response, generateSwaggerYaml, addResponseType, Get, BodyIsArray, Delete, Patch, generateSwaggerJson, BodyIsString, Header } from '../src';
 
 describe('declaration of array in param/query/body/response', () => {
   @BaseUrl('/dogs/')
@@ -32,6 +32,7 @@ describe('declaration of array in param/query/body/response', () => {
   @BaseUrl('/owners/')
   class Owner {
     @Post('/')
+    @Header('Authorization', 'string*')
     @Body('name', 'string*')
     @Body('dogIds', 'string[]*')
     @Response(201, '#/Owner')

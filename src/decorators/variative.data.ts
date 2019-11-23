@@ -40,6 +40,10 @@ export function Body(name: string | Object, type?: string, required?: boolean) {
   return VariativeDataDecorator(name, ParameterLocation.Body, type, required);
 }
 
+export function Header(name: string | Object, type?: string, required?: boolean) {
+  return VariativeDataDecorator(name, ParameterLocation.Header, type, required);
+}
+
 function VariativeDataDecorator(
   name: string | Object,
   location: ParameterLocation,
@@ -57,7 +61,9 @@ function VariativeDataDecorator(
     }
 
     let addParam: Function;
-    if (location === ParameterLocation.Body) {
+    if (location === ParameterLocation.Header) {
+      addParam = storageInstance.upsertHeaderParam;
+    } else if (location === ParameterLocation.Body) {
       addParam = storageInstance.upsertBodyParam;
     } else if (location === ParameterLocation.Query) {
       addParam = storageInstance.upsertQueryParam;

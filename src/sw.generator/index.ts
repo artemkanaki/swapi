@@ -125,7 +125,9 @@ function prepareSwaggerMethodParams(endpoint: Endpoint, operationId: string): Ar
 
   const queryParams = endpoint.query.map((param) => prepareInUrlParam(param, ParameterLocation.Query));
 
-  const parameters: Array<SwaggerJsonMethodParameter> = concat(queryParams, urlParams);
+  const headerParams = endpoint.header.map((param) => prepareInUrlParam(param, ParameterLocation.Header));
+
+  const parameters: Array<SwaggerJsonMethodParameter> = concat(queryParams, urlParams, headerParams);
 
   if (endpoint.body.length > 0 || !!endpoint.bodyType) {
     const bodyParams: any = prepareSwaggerMethodBodyParameter(endpoint, operationId);

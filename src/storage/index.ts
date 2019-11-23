@@ -101,6 +101,7 @@ export class NodeStorage {
       path,
       method,
       description,
+      header: [],
       body: [],
       urlParams: [],
       query: [],
@@ -222,7 +223,9 @@ export class NodeStorage {
   ): void {
     const endpoint = this.findOrCreateEndpointByName(nodeName, endpointName);
 
-    if (location === ParameterLocation.UrlPath) {
+    if (location === ParameterLocation.Header) {
+      endpoint.header.push(param);
+    } else if (location === ParameterLocation.UrlPath) {
       endpoint.urlParams.push(param);
     } else if (location === ParameterLocation.Query) {
       endpoint.query.push(param);
@@ -262,6 +265,28 @@ export class NodeStorage {
     storedParam.type = param.type ? param.type : storedParam.type;
     storedParam.required = typeof param.required === 'boolean' ? param.required : storedParam.required;
     storedParam.isArray = typeof param.isArray === 'boolean' ? param.isArray : storedParam.isArray;
+  }
+
+  public addHeaderParam(nodeName: string, endpointName: string, param: Parameter): void {
+    param.required = typeof param.required === 'boolean' ? param.required : false;
+
+    this.addEndpointParam(nodeName, endpointName, param, ParameterLocation.Header);
+  }
+
+  public createHeaderParam(
+    nodeName: string,
+    endpointName: string,
+    name: string,
+    type: string,
+    required: boolean = false
+  ) {
+    this.createEndpointParam(nodeName, endpointName, name, type, required, ParameterLocation.Header);
+  }
+
+  public upsertHeaderParam(nodeName: string, endpointName: string, param: Parameter) {
+    param.required = typeof param.required === 'boolean' ? param.required : false;
+
+    this.upsertEndpointParam(nodeName, endpointName, param, ParameterLocation.Header);
   }
 
   public addQueryParam(nodeName: string, endpointName: string, param: Parameter): void {
@@ -497,7 +522,9 @@ export class NodeStorage {
     }
 
     let param;
-    if (location === ParameterLocation.Body) {
+    if (location === ParameterLocation.Header) {
+      param = endpoint.header.find((param) => param.name === name);
+    } else if (location === ParameterLocation.Body) {
       param = endpoint.body.find((param) => param.name === name);
     } else if (location === ParameterLocation.Query) {
       param = endpoint.query.find((param) => param.name === name);
@@ -524,7 +551,9 @@ export class NodeStorage {
 
     param = generateParamMeta(name);
 
-    if (location === ParameterLocation.Body) {
+    if (location === ParameterLocation.Header) {
+      endpoint.header.push(param);
+    } else if (location === ParameterLocation.Body) {
       endpoint.body.push(param);
     } else if (location === ParameterLocation.Query) {
       endpoint.query.push(param)
